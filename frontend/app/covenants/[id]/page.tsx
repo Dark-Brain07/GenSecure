@@ -14,7 +14,8 @@ import {
 } from "@/lib/protocol";
 import { Covenant, Challenge } from "@/lib/types";
 import { attoToGen, shorten, timeLabel, isoLabel } from "@/lib/format";
-import { useInjectedWallet, EXPLORER_URL, sameWallet } from "@/lib/wallet";
+import { useInjectedWallet, sameWallet } from "@/lib/wallet";
+import { EXPLORER_URL } from "@/lib/constants";
 
 export default function CovenantDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = use(params);

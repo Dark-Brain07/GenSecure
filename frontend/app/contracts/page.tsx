@@ -1,5 +1,5 @@
 import { ExternalLink, CheckCircle2, ShieldCheck, Cpu } from "lucide-react";
-import { EXPLORER_URL } from "@/lib/wallet";
+import { EXPLORER_URL } from "@/lib/constants";
 import deployment from "@/lib/deployment.json";
 
 export default function VerificationProofsPage() {

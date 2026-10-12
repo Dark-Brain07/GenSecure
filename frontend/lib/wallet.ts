@@ -2,10 +2,9 @@
 
 import { createContext, useContext, useEffect, useRef, useState, useCallback, ReactNode, createElement } from "react";
 
-export const CHAIN_ID = 61999;
-export const CHAIN_HEX = `0x${CHAIN_ID.toString(16)}`;
-export const RPC_URL = process.env.NEXT_PUBLIC_GENLAYER_RPC_URL || "https://studio.genlayer.com/api";
-export const EXPLORER_URL = process.env.NEXT_PUBLIC_GENLAYER_EXPLORER || "https://explorer-studio.genlayer.com";
+import { CHAIN_ID, CHAIN_HEX, RPC_URL, EXPLORER_URL } from "./constants";
+export { CHAIN_ID, CHAIN_HEX, RPC_URL, EXPLORER_URL };
+
 
 export type Eip1193Provider = {
   request: (args: { method: string; params?: unknown[] | Record<string, unknown> }) => Promise<unknown>;

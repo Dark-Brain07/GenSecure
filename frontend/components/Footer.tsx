@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Shield, ExternalLink } from "lucide-react";
-import { EXPLORER_URL } from "@/lib/wallet";
+import { EXPLORER_URL } from "@/lib/constants";
 
 export function Footer() {
   return (

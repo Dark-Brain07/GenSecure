@@ -6,7 +6,8 @@ import { ArrowLeft, ArrowRight, ShieldCheck, Lock, ExternalLink, Sparkles, Check
 import { toast } from "sonner";
 import { submitWrite, waitForFinalization, findLatestCovenantByOwner } from "@/lib/protocol";
 import { genToAtto } from "@/lib/format";
-import { useInjectedWallet, EXPLORER_URL } from "@/lib/wallet";
+import { useInjectedWallet } from "@/lib/wallet";
+import { EXPLORER_URL } from "@/lib/constants";
 
 const STEPS = [
   "Source URL",
