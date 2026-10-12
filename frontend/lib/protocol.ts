@@ -1,0 +1,236 @@
+"use client";
+
+import { createClient } from "genlayer-js";
+import { studionet } from "genlayer-js/chains";
+import { ExecutionResult, executionResultNumberToName, TransactionHashVariant, TransactionStatus } from "genlayer-js/types";
+import { ensureStudionet, injectedProvider, RPC_URL } from "./wallet";
+import type { Challenge, Covenant, ProtocolStats } from "./types";
+import deployment from "./deployment.json";
+
+export const REGISTRY_ADDRESS = deployment.contracts.registry.address;
+export const INSPECTOR_ADDRESS = deployment.contracts.inspector.address;
+export const JUDGE_ADDRESS = deployment.contracts.judge.address;
+
+export const EMPTY_STATS: ProtocolStats = {
+  product: "GenSecure",
+  version: "1.0.0-studionet",
+  network: "StudioNet",
+  chain_id: "61999",
+  rpc: "https://studio.genlayer.com/api",
+  inspector: INSPECTOR_ADDRESS,
+  judge: JUDGE_ADDRESS,
+  components_configured: true,
+  admin_controls: false,
+  protocol_fee_bps: "0",
+  max_challenges_per_covenant: "unlimited",
+  total_covenants: "0",
+  total_challenges: "0",
+  covenants_activated: "0",
+  covenants_breached: "0",
+  covenants_expired: "0",
+  total_deposited_atto: "0",
+  stake_escrow_atto: "0",
+  bond_escrow_atto: "0",
+  claimable_atto: "0",
+  withdrawn_atto: "0",
+  accounting_balanced: true,
+};
+
+export function protocolConfigured(): boolean {
+  return /^0x[0-9a-fA-F]{40}$/.test(REGISTRY_ADDRESS);
+}
+
+function assertRegistry(): `0x${string}` {
+  if (!protocolConfigured()) throw new Error("GenSecure Registry is not configured in deployments/studionet.json");
+  return REGISTRY_ADDRESS as `0x${string}`;
+}
+
+function normalize(value: unknown): any {
+  if (value instanceof Map) return Object.fromEntries(Array.from(value.entries()).map(([k, v]) => [String(k), normalize(v)]));
+  if (Array.isArray(value)) return value.map(normalize);
+  if (value && typeof value === "object") {
+    const out: Record<string, unknown> = {};
+    for (const [key, val] of Object.entries(value)) out[key] = normalize(val);
+    return out;
+  }
+  return typeof value === "bigint" ? value.toString() : value;
+}
+
+const rpcTimes: number[] = [];
+const cache = new Map<string, { expires: number; value: unknown }>();
+const inflight = new Map<string, Promise<unknown>>();
+const RPC_WINDOW_MS = 60_000;
+const RPC_BUDGET = 24;
+
+async function reserveRpc(): Promise<void> {
+  while (true) {
+    const now = Date.now();
+    while (rpcTimes.length && now - rpcTimes[0] >= RPC_WINDOW_MS) rpcTimes.shift();
+    if (rpcTimes.length < RPC_BUDGET) {
+      rpcTimes.push(now);
+      return;
+    }
+    await new Promise((resolve) => setTimeout(resolve, Math.max(500, RPC_WINDOW_MS - (now - rpcTimes[0]) + 50)));
+  }
+}
+
+async function withBudget<T>(operation: () => Promise<T>): Promise<T> {
+  let delay = 1200;
+  for (let attempt = 0; ; attempt += 1) {
+    await reserveRpc();
+    try {
+      return await operation();
+    } catch (error) {
+      const message = String((error as Error)?.message || error).toLowerCase();
+      const retry = message.includes("429") || message.includes("rate limit") || message.includes("too many requests") || message.includes("fetch failed");
+      if (!retry || attempt >= 3) throw error;
+      await new Promise((resolve) => setTimeout(resolve, delay));
+      delay = Math.min(delay * 2, 10_000);
+    }
+  }
+}
+
+export function readClient() {
+  return createClient({ chain: studionet, endpoint: RPC_URL } as any);
+}
+
+async function writeClient(address: string) {
+  const provider = injectedProvider();
+  if (!provider) throw new Error("No injected EIP-1193 Web3 wallet found");
+  return createClient({ chain: studionet, endpoint: RPC_URL, account: address as `0x${string}`, provider } as any);
+}
+
+async function read<T>(functionName: string, args: unknown[] = [], latest = false): Promise<T> {
+  const key = JSON.stringify([functionName, args.map((v) => typeof v === "bigint" ? v.toString() : v), latest]);
+  const existing = cache.get(key);
+  if (existing && existing.expires > Date.now()) return existing.value as T;
+  const pending = inflight.get(key);
+  if (pending) return pending as Promise<T>;
+  const request = withBudget(() => readClient().readContract({
+    address: assertRegistry(),
+    functionName,
+    args,
+    transactionHashVariant: latest ? TransactionHashVariant.LATEST_NONFINAL : TransactionHashVariant.LATEST_FINAL,
+  } as any)).then(normalize).then((value) => {
+    cache.set(key, { value, expires: Date.now() + (latest ? 1800 : 7000) });
+    return value as T;
+  }).finally(() => inflight.delete(key));
+  inflight.set(key, request);
+  return request;
+}
+
+export async function listCovenants(offset = 0, count = 24): Promise<{ items: Covenant[]; total: string }> {
+  try {
+    const res = await read<{ items: Covenant[]; total: string }>("list_covenants", [BigInt(offset), BigInt(count)]);
+    if (res && Array.isArray(res.items)) return res;
+  } catch (err) {
+    console.error("StudioNet list_covenants error:", err);
+  }
+  return { items: [], total: "0" };
+}
+
+export async function getCovenant(id: string, latest = false): Promise<Covenant> {
+  const res = await read<Covenant>("get_covenant", [id], latest);
+  if (res && res.id) return res;
+  throw new Error(`Covenant ${id} not found on GenSecure Registry`);
+}
+
+export async function listChallenges(id: string, offset = 0, count = 24, latest = false): Promise<{ items: Challenge[]; total: string }> {
+  try {
+    const res = await read<{ items: Challenge[]; total: string }>("list_challenges", [id, BigInt(offset), BigInt(count)], latest);
+    if (res && Array.isArray(res.items)) return res;
+  } catch (err) {
+    console.error("StudioNet list_challenges error:", err);
+  }
+  return { items: [], total: "0" };
+}
+
+export async function listWalletChallenges(address: string, offset = 0, count = 24, latest = false): Promise<{ items: Challenge[]; total: string }> {
+  try {
+    const res = await read<{ items: Challenge[]; total: string }>("list_wallet_challenges", [address, BigInt(offset), BigInt(count)], latest);
+    if (res && Array.isArray(res.items)) return res;
+  } catch (err) {
+    console.error("StudioNet list_wallet_challenges error:", err);
+  }
+  return { items: [], total: "0" };
+}
+
+export async function getStats(): Promise<ProtocolStats> {
+  try {
+    const res = await read<ProtocolStats>("get_stats");
+    if (res && res.total_covenants !== undefined) return res;
+  } catch (err) {
+    console.error("StudioNet get_stats error:", err);
+  }
+  return EMPTY_STATS;
+}
+
+export async function getCredit(address: string, latest = false): Promise<string> {
+  try {
+    return await read("get_credit", [address], latest);
+  } catch {
+    return "0";
+  }
+}
+
+export async function findLatestCovenantByOwner(address: string, latest = false): Promise<string> {
+  try {
+    return await read("find_latest_covenant_by_owner", [address], latest);
+  } catch {
+    return "";
+  }
+}
+
+export function baselineExpiryAvailable(covenant: Covenant, nowSeconds = Math.floor(Date.now() / 1000)): boolean {
+  if (typeof covenant.can_expire_baseline === "boolean") return covenant.can_expire_baseline;
+  const deadline = Number(covenant.baseline_deadline);
+  return covenant.status === "BASELINE_PENDING" && Number.isFinite(deadline)
+    && deadline > 0 && nowSeconds >= deadline && nowSeconds < Number(covenant.expires_at);
+}
+
+export function challengeExpiryAvailable(challenge: Challenge, nowSeconds = Math.floor(Date.now() / 1000)): boolean {
+  if (typeof challenge.can_expire === "boolean") return challenge.can_expire;
+  const deadline = Number(challenge.stage_deadline);
+  return (challenge.status === "INSPECTION_PENDING" || challenge.status === "JUDGMENT_PENDING")
+    && Number.isFinite(deadline) && deadline > 0 && nowSeconds >= deadline;
+}
+
+export async function submitWrite(address: string, functionName: string, args: unknown[] = [], value = 0n): Promise<string> {
+  await ensureStudionet();
+  const client = await writeClient(address);
+  const hash = await withBudget(() => client.writeContract({ address: assertRegistry(), functionName, args, value } as any));
+  cache.clear();
+  return String(hash);
+}
+
+export async function waitForFinalization(hash: string): Promise<unknown> {
+  const receipt = await readClient().waitForTransactionReceipt({ hash: hash as any, status: TransactionStatus.FINALIZED, retries: 240, interval: 15_000 });
+  assertSuccessfulExecution(receipt, hash);
+  return receipt;
+}
+
+export function assertSuccessfulExecution(receipt: any, hash = "transaction"): void {
+  const statusName = receipt?.statusName ?? receipt?.status_name;
+  if (statusName !== TransactionStatus.FINALIZED) {
+    throw new Error(`${hash} did not finalize (status: ${statusName ?? receipt?.status ?? "unknown"}).`);
+  }
+  const leaders = receipt?.consensus_data?.leader_receipt?.filter((item: any) => item.mode === "leader") ?? [];
+  const leader = leaders.at(-1);
+  const resultName = receipt?.txExecutionResultName
+    ?? (receipt?.txExecutionResult !== undefined
+      ? executionResultNumberToName[String(receipt.txExecutionResult) as keyof typeof executionResultNumberToName]
+      : undefined)
+    ?? (leader?.execution_result === "SUCCESS" && leader?.genvm_result?.raw_error == null
+      ? ExecutionResult.FINISHED_WITH_RETURN
+      : leader?.execution_result === "ERROR" || leader?.genvm_result?.raw_error != null
+        ? ExecutionResult.FINISHED_WITH_ERROR
+        : undefined);
+  if (resultName !== ExecutionResult.FINISHED_WITH_RETURN) {
+    const execution = resultName ?? "unknown";
+    const reasonValue = leader?.genvm_result?.error_description
+      ?? leader?.genvm_result?.raw_error
+      ?? receipt?.consensus_data?.leader_receipt?.find((item: any) => item.error)?.error;
+    const reason = typeof reasonValue === "string" ? reasonValue : JSON.stringify(reasonValue);
+    throw new Error(`${hash} finalized but contract execution failed (${execution})${reason ? `: ${reason}` : "."}`);
+  }
+}

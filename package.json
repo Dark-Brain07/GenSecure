@@ -1,0 +1,19 @@
+{
+  "name": "gensecure-protocol",
+  "version": "1.0.0",
+  "private": true,
+  "description": "GenSecure - Autonomous Covenant & Public Web Assurance Protocol on GenLayer",
+  "scripts": {
+    "test:contracts": "pytest tests/test_gensecure_contracts.py -v",
+    "deploy:studionet": "npx tsx deploy/deployGenSecure.ts",
+    "frontend:dev": "npm --prefix frontend run dev",
+    "frontend:build": "npm --prefix frontend run build"
+  },
+  "dependencies": {
+    "genlayer-js": "^1.1.8"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.3"
+  }
+}

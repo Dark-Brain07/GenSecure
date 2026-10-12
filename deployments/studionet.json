@@ -1,0 +1,27 @@
+{
+  "product": "GenSecure",
+  "network": "studionet",
+  "chainId": 61999,
+  "rpc": "https://studio.genlayer.com/api",
+  "explorer": "https://explorer-studio.genlayer.com",
+  "deployedAt": "2026-10-12T01:42:41.347415+00:00",
+  "deployer": "0x7b0E62ED36C4F24060772Aa57d4f1d7F10B68624",
+  "contracts": {
+    "registry": {
+      "address": "0x9be17766e035636393B5e1cb39051be749880f57",
+      "txHash": "0x5ddc5c30180c43dbd6a03c01bd8e4b3e52a2b7643186805e5d4be914aeba4272",
+      "hash": "0x5ddc5c30180c43dbd6a03c01bd8e4b3e52a2b7643186805e5d4be914aeba4272"
+    },
+    "inspector": {
+      "address": "0x6bd66F93708CCD2ee38a7E14d50A946aEF3E8467",
+      "txHash": "0xa0253b9f9a6f7d88bd04187f3564963e8891fca5902f1db33d01af91abd33087",
+      "hash": "0xa0253b9f9a6f7d88bd04187f3564963e8891fca5902f1db33d01af91abd33087"
+    },
+    "judge": {
+      "address": "0xc60cf424B5D6C59C1ACF939a122304d8c6D69959",
+      "txHash": "0xf11199c2377b8b122322dc138cf7c45875a809e09033e652384df4d3bfa66ba0",
+      "hash": "0xf11199c2377b8b122322dc138cf7c45875a809e09033e652384df4d3bfa66ba0"
+    },
+    "configureTxHash": "0x77726fbde54d4d04c0a0bf91866baf53ac1c341afa1c716f00a73594ec6b44eb"
+  }
+}
