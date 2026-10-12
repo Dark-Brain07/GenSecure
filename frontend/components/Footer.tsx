@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { Shield, ExternalLink } from "lucide-react";
+import Image from "next/image";
+import { ExternalLink } from "lucide-react";
 import { EXPLORER_URL } from "@/lib/constants";
 
 export function Footer() {
@@ -7,7 +8,13 @@ export function Footer() {
     <footer className="site-footer">
       <div className="footer-inner">
         <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-          <Shield size={16} color="var(--cyan)" />
+          <Image
+            src="/logo.png"
+            alt="GenSecure"
+            width={20}
+            height={20}
+            style={{ borderRadius: "5px", border: "1px solid rgba(6, 182, 212, 0.4)", display: "block" }}
+          />
           <span style={{ fontWeight: 700, color: "var(--text-main)" }}>GenSecure Protocol</span>
           <span>· Autonomous Public Covenant & Semantic Assurance</span>
         </div>

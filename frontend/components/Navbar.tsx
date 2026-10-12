@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { Shield, Wallet, Copy, LogOut, Check, Sparkles } from "lucide-react";
+import { Wallet, Copy, LogOut, Check, Sparkles } from "lucide-react";
 import { useState } from "react";
 import { useInjectedWallet, copyWalletAddress } from "@/lib/wallet";
 import { shorten } from "@/lib/format";
@@ -24,7 +25,14 @@ export function Navbar() {
       <div className="navbar-container">
         <Link href="/" className="brand-wrapper">
           <div className="brand-symbol">
-            <Shield size={20} />
+            <Image
+              src="/logo.png"
+              alt="GenSecure Logo"
+              width={38}
+              height={38}
+              className="brand-logo-img"
+              priority
+            />
           </div>
           <span className="brand-name">GenSecure</span>
           <span className="brand-badge">PROTOCOL</span>

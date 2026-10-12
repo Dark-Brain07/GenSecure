@@ -7,6 +7,11 @@ import { Footer } from "@/components/Footer";
 export const metadata: Metadata = {
   title: "GenSecure | Public Covenant & Semantic Assurance Protocol",
   description: "Stake a public promise. Prove when it changes. GenSecure is a GenLayer-native decentralized covenant protocol for autonomous web-state assurance.",
+  icons: {
+    icon: "/logo.png",
+    shortcut: "/logo.png",
+    apple: "/logo.png",
+  },
 };
 
 export default function RootLayout({
