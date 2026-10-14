@@ -13,7 +13,7 @@ export const JUDGE_ADDRESS = deployment.contracts.judge.address;
 
 export const EMPTY_STATS: ProtocolStats = {
   product: "GenSecure",
-  version: "1.0.0-studionet",
+  version: "1.1.0-studionet",
   network: "StudioNet",
   chain_id: "61999",
   rpc: "https://studio.genlayer.com/api",
