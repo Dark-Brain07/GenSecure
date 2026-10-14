@@ -22,17 +22,17 @@ export function TelemetryStrip() {
           <Lock size={12} color="var(--cyan)" />
           Total Escrow Staked
         </small>
-        <strong>{attoToGen(stats.total_deposited_atto, 2)} GEN</strong>
+        <strong>{attoToGen(stats.total_deposited_atto, 4)} GEN</strong>
         <span>Strict conservation invariant verified</span>
       </div>
 
       <div className="telemetry-cell">
         <small style={{ display: "flex", alignItems: "center", gap: "6px" }}>
           <ShieldCheck size={12} color="var(--emerald)" />
-          Active Covenants
+          Covenants Registered
         </small>
-        <strong>{stats.covenants_activated || stats.total_covenants}</strong>
-        <span>Live HTTPS sources monitored</span>
+        <strong>{Number(stats.total_covenants) || Number(stats.covenants_activated) || 0}</strong>
+        <span>{Number(stats.covenants_activated) > 0 ? `${stats.covenants_activated} active on StudioNet` : "Staked on StudioNet"}</span>
       </div>
 
       <div className="telemetry-cell">

@@ -12,9 +12,18 @@ import { attoToGen, timeLabel } from "@/lib/format";
 
 export default function HomePage() {
   const [covenants, setCovenants] = useState<Covenant[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    listCovenants(0, 3).then((res) => setCovenants(res.items)).catch(console.error);
+    listCovenants(0, 3)
+      .then((res) => {
+        setCovenants(res.items);
+        setLoading(false);
+      })
+      .catch((err) => {
+        console.error(err);
+        setLoading(false);
+      });
   }, []);
 
   return (
@@ -111,7 +120,12 @@ export default function HomePage() {
           </Link>
         </div>
 
-        {covenants.length === 0 ? (
+        {loading ? (
+          <div className="cyber-card" style={{ textAlign: "center", padding: "36px 24px", color: "var(--cyan)" }}>
+            <span className="pulse-dot" style={{ display: "inline-block", marginRight: "8px" }}></span>
+            Connecting to StudioNet RPC node...
+          </div>
+        ) : covenants.length === 0 ? (
           <div className="cyber-card" style={{ textAlign: "center", padding: "48px 24px" }}>
             <ShieldCheck size={40} color="var(--cyan)" style={{ margin: "0 auto 16px" }} />
             <h3 style={{ fontSize: "18px", fontWeight: 700, marginBottom: "8px" }}>No Covenants Registered Yet</h3>
