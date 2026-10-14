@@ -72,30 +72,32 @@ GenSecureRegistry   GenSecureInspector   GenSecureJudge
 ## Deployed Contract Addresses & StudioNet Verification
 
 **Target Network:** GenLayer StudioNet (Chain ID: `61999`)  
-**Deployer Address:** [`0x7b0E62ED36C4F24060772Aa57d4f1d7F10B68624`](https://explorer-studio.genlayer.com/address/0x7b0E62ED36C4F24060772Aa57d4f1d7F10B68624)  
-**Manifest File:** [`deployments/studionet.json`](deployments/studionet.json)
+**Deployer Address:** [`0x8EE4fd47FC30d17f33615FAeF8a69465bfa9B017`](https://explorer-studio.genlayer.com/address/0x8EE4fd47FC30d17f33615FAeF8a69465bfa9B017)  
+**Manifest File:** [`deployments/studionet.json`](deployments/studionet.json)  
+**Workflow Evidence:** [`deployments/workflow_evidence.json`](deployments/workflow_evidence.json)
 
 | Intelligent Contract | Contract Address | Finalized Transaction Hash |
 |---|---|---|
-| **GenSecureRegistry** | [`0x9be17766e035636393B5e1cb39051be749880f57`](https://explorer-studio.genlayer.com/address/0x9be17766e035636393B5e1cb39051be749880f57) | [`0x5ddc5c30180c43dbd6a03c01bd8e4b3e52a2b7643186805e5d4be914aeba4272`](https://explorer-studio.genlayer.com/tx/0x5ddc5c30180c43dbd6a03c01bd8e4b3e52a2b7643186805e5d4be914aeba4272) |
-| **GenSecureInspector** | [`0x6bd66F93708CCD2ee38a7E14d50A946aEF3E8467`](https://explorer-studio.genlayer.com/address/0x6bd66F93708CCD2ee38a7E14d50A946aEF3E8467) | [`0xa0253b9f9a6f7d88bd04187f3564963e8891fca5902f1db33d01af91abd33087`](https://explorer-studio.genlayer.com/tx/0xa0253b9f9a6f7d88bd04187f3564963e8891fca5902f1db33d01af91abd33087) |
-| **GenSecureJudge** | [`0xc60cf424B5D6C59C1ACF939a122304d8c6D69959`](https://explorer-studio.genlayer.com/address/0xc60cf424B5D6C59C1ACF939a122304d8c6D69959) | [`0xf11199c2377b8b122322dc138cf7c45875a809e09033e652384df4d3bfa66ba0`](https://explorer-studio.genlayer.com/tx/0xf11199c2377b8b122322dc138cf7c45875a809e09033e652384df4d3bfa66ba0) |
-| **Component Binding** | Bound on `GenSecureRegistry` | [`0x77726fbde54d4d04c0a0bf91866baf53ac1c341afa1c716f00a73594ec6b44eb`](https://explorer-studio.genlayer.com/tx/0x77726fbde54d4d04c0a0bf91866baf53ac1c341afa1c716f00a73594ec6b44eb) |
+| **GenSecureRegistry** | [`0xFc8434166AEfA510D60363DA42ac20A874554758`](https://explorer-studio.genlayer.com/address/0xFc8434166AEfA510D60363DA42ac20A874554758) | [`0xb341832115d3b21b838e86377fecd59362f220e69709a7cf3d3d5ac7a418e1b4`](https://explorer-studio.genlayer.com/tx/0xb341832115d3b21b838e86377fecd59362f220e69709a7cf3d3d5ac7a418e1b4) |
+| **GenSecureInspector** | [`0x5cC39618D17994B89d244d324a29C34EBecD8E80`](https://explorer-studio.genlayer.com/address/0x5cC39618D17994B89d244d324a29C34EBecD8E80) | [`0xa1ec50c7dbb2cc5d3437c48897e6c9f170a745098ab45538989397eaa848f6af`](https://explorer-studio.genlayer.com/tx/0xa1ec50c7dbb2cc5d3437c48897e6c9f170a745098ab45538989397eaa848f6af) |
+| **GenSecureJudge** | [`0x83fC9A2B05e30a2E956727F826A925e6eAbedc55`](https://explorer-studio.genlayer.com/address/0x83fC9A2B05e30a2E956727F826A925e6eAbedc55) | [`0x18919e14c71b7a106f7b90658325a07c53ad25d866c1a6fc53bdb838af3cc524`](https://explorer-studio.genlayer.com/tx/0x18919e14c71b7a106f7b90658325a07c53ad25d866c1a6fc53bdb838af3cc524) |
+| **Component Binding** | Bound on `GenSecureRegistry` | [`0xdbcc00872dc2a9b3b528ab22f9e404cd34f4a1d11f518d95a2d51d32a808c5d4`](https://explorer-studio.genlayer.com/tx/0xdbcc00872dc2a9b3b528ab22f9e404cd34f4a1d11f518d95a2d51d32a808c5d4) |
+| **Live Covenant Staking** | `gsc-1` Created & Staked on StudioNet | [`0xc3fa9a585b64f45b21a8e160016472ec5152229ff4b475aab40c4493d1086dfc`](https://explorer-studio.genlayer.com/tx/0xc3fa9a585b64f45b21a8e160016472ec5152229ff4b475aab40c4493d1086dfc) |
 
 ---
 
 ## Verification & Testing
 
-### 1. Contract Static & Audit Tests
-Run the comprehensive AST, dependency, and closure audit suite:
+### 1. Direct Mode & Static Audit Test Suite
+GenSecure features an automated 20-test test suite using `genlayer-test` direct mode:
 ```bash
-python -m pytest tests/test_gensecure_contracts.py -v
+python -m pytest tests/ -v
 ```
-All tests verify:
-- Zero syntax or compilation errors.
-- Strict AST import validation (no forbidden imports like `os`, `sys`, `random`, or `subprocess`).
-- Pinned runner dependency header on line 1.
-- Storage Pre-Extraction Rule adherence across non-deterministic validator closures.
+All 20 tests pass:
+- **Registry Lifecycle:** Deployment, component binding, covenant creation, baseline certification, baseline refund on rejection, bond compensation, breach settlement, persistent source withdrawal forfeiture, late challenges past old 65m window, authorization checks.
+- **Inspector Consensus:** Live stats, smart keyword-directed evidence extraction (>30,000 chars), material change detection, graceful source unavailability handling.
+- **Judge Consensus:** Adjudication stats, confirmed breach verdict with quotes & SHA-256 fingerprinting, permitted change non-breach verdict.
+- **AST & Closure Audit:** 100% adherence to Storage Pre-Extraction Rule, zero forbidden standard-library imports, pinned runner header `# { "Depends": "py-genlayer:1jb45aa8ynh2a9c9xn3b7qqh8sm5q93hwfp7jqmwsfhh8jpz09h6" }`.
 
 ### 2. Frontend Development Server
 ```bash

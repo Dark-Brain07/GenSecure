@@ -4,24 +4,24 @@
   "chainId": 61999,
   "rpc": "https://studio.genlayer.com/api",
   "explorer": "https://explorer-studio.genlayer.com",
-  "deployedAt": "2026-10-12T01:42:41.347415+00:00",
-  "deployer": "0x7b0E62ED36C4F24060772Aa57d4f1d7F10B68624",
+  "deployedAt": "2026-10-14T16:06:58.679314+00:00",
+  "deployer": "0x8EE4fd47FC30d17f33615FAeF8a69465bfa9B017",
   "contracts": {
     "registry": {
-      "address": "0x9be17766e035636393B5e1cb39051be749880f57",
-      "txHash": "0x5ddc5c30180c43dbd6a03c01bd8e4b3e52a2b7643186805e5d4be914aeba4272",
-      "hash": "0x5ddc5c30180c43dbd6a03c01bd8e4b3e52a2b7643186805e5d4be914aeba4272"
+      "address": "0xFc8434166AEfA510D60363DA42ac20A874554758",
+      "txHash": "0xb341832115d3b21b838e86377fecd59362f220e69709a7cf3d3d5ac7a418e1b4",
+      "hash": "0xb341832115d3b21b838e86377fecd59362f220e69709a7cf3d3d5ac7a418e1b4"
     },
     "inspector": {
-      "address": "0x6bd66F93708CCD2ee38a7E14d50A946aEF3E8467",
-      "txHash": "0xa0253b9f9a6f7d88bd04187f3564963e8891fca5902f1db33d01af91abd33087",
-      "hash": "0xa0253b9f9a6f7d88bd04187f3564963e8891fca5902f1db33d01af91abd33087"
+      "address": "0x5cC39618D17994B89d244d324a29C34EBecD8E80",
+      "txHash": "0xa1ec50c7dbb2cc5d3437c48897e6c9f170a745098ab45538989397eaa848f6af",
+      "hash": "0xa1ec50c7dbb2cc5d3437c48897e6c9f170a745098ab45538989397eaa848f6af"
     },
     "judge": {
-      "address": "0xc60cf424B5D6C59C1ACF939a122304d8c6D69959",
-      "txHash": "0xf11199c2377b8b122322dc138cf7c45875a809e09033e652384df4d3bfa66ba0",
-      "hash": "0xf11199c2377b8b122322dc138cf7c45875a809e09033e652384df4d3bfa66ba0"
+      "address": "0x83fC9A2B05e30a2E956727F826A925e6eAbedc55",
+      "txHash": "0x18919e14c71b7a106f7b90658325a07c53ad25d866c1a6fc53bdb838af3cc524",
+      "hash": "0x18919e14c71b7a106f7b90658325a07c53ad25d866c1a6fc53bdb838af3cc524"
     },
-    "configureTxHash": "0x77726fbde54d4d04c0a0bf91866baf53ac1c341afa1c716f00a73594ec6b44eb"
+    "configureTxHash": "0xdbcc00872dc2a9b3b528ab22f9e404cd34f4a1d11f518d95a2d51d32a808c5d4"
   }
 }

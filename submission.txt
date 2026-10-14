@@ -1,0 +1,97 @@
+# GenLayer Points Portal Submission - GenSecure
+
+================================================================================
+01. IDENTITY
+================================================================================
+Logo:
+- File located at: frontend/public/logo.png (or public/banner-logo.png)
+- Aspect: Square (Cybernetic shield icon with cyan glowing accents)
+
+Project Name:
+GenSecure
+
+Primary Tag:
+AI & Agents (Recommended) or Dispute Resolution (Alternative) or Other
+
+Tag 1:
+Workflow Automation
+
+Tag 2:
+Protocol Experiment (or Dataset Verification)
+
+================================================================================
+02. PROJECT SUMMARY (Character Count: 154 / 180 max)
+================================================================================
+Autonomous covenant protocol staking value behind live HTTPS terms; AI validators crawl canonical URLs to catch semantic drift and settle breach bounties.
+
+================================================================================
+03. PROJECT OVERVIEW (Character Count: 962 / 1000 max)
+================================================================================
+Deterministic blockchains cannot read HTTPS endpoints or parse natural-language legal terms. Organizations publish critical warranties, privacy promises, and service level commitments, but users must blindly trust they will not silently change.
+
+GenSecure is a decentralized assurance protocol natively powered by GenLayer. Protocol teams and organizations lock economic stake behind exact commitments tied to immutable canonical HTTPS URLs.
+
+When activated, GenLayer validators independently fetch the live web terms and certify a semantic baseline. If community members suspect a breach, validators re-crawl the exact frozen endpoint via GenVM web rendering and evaluate semantic drift through comparative equivalence consensus (gl.eq_principle.prompt_comparative). A decoupled judge contract verifies whether deviations violate the immutable rules, automatically paying the challenger and distributing the stake—with zero centralized oracles or operator keys.
+
+================================================================================
+04. DEMO VIDEO (Optional)
+================================================================================
+Demo URL (YouTube or X):
+[Optional - Leave empty or add direct YouTube/X video link if recorded]
+
+================================================================================
+05. HOW-TO (Step-by-Step Path)
+================================================================================
+Step 1:
+- Heading: Connect Wallet
+- Instruction: Connect your EVM wallet (MetaMask) configured for GenLayer StudioNet (Chain ID: 61999, RPC: https://studio.genlayer.com/api) using the button on the top right of the application.
+
+Step 2:
+- Heading: Explore or Create Covenant
+- Instruction: Click "Explore Active Registry" to inspect live commitments or click "Create Covenant" to stake test GEN behind an HTTPS URL, human-readable promise, and breach criteria.
+
+Step 3:
+- Heading: Initiate a Drift Challenge
+- Instruction: Select any active covenant and click "Challenge Covenant". GenLayer validators will autonomously re-crawl the canonical HTTPS URL in real time without requiring off-chain user proofs.
+
+Step 4:
+- Heading: Verify Multi-Validator Adjudication
+- Instruction: Navigate to "Contracts" or "Ledger" to observe the two-stage consensus outcome: GenSecureInspector evaluates semantic drift, and GenSecureJudge settles breach bounties directly on StudioNet.
+
+================================================================================
+06. REVIEW VERIFICATION (Character Count: 355 / 500 max)
+================================================================================
+Expected verification outcome:
+Stewards will see an active covenant registry linked to 3 intelligent contracts on StudioNet. Submitting a challenge triggers GenLayer validators to independently crawl the target HTTPS endpoint, run LLM comparative consensus, and transition state from ACTIVE to MATERIAL_CHANGE or BREACH_SETTLED with on-chain transaction receipts in the Studio Explorer.
+
+Contract Links:
+Contract link 1:
+https://explorer-studio.genlayer.com/address/0xFc8434166AEfA510D60363DA42ac20A874554758
+
+Contract link 2:
+https://explorer-studio.genlayer.com/address/0x5cC39618D17994B89d244d324a29C34EBecD8E80
+
+Contract link 3:
+https://explorer-studio.genlayer.com/address/0x83fC9A2B05e30a2E956727F826A925e6eAbedc55
+
+================================================================================
+07. PROJECT LINKS & EVIDENCE
+================================================================================
+Website (required):
+https://gensecure.vercel.app
+
+GitHub:
+https://github.com/Dark-Brain07/GenSecure
+
+Evidence & Supporting Information:
+- Primary Repository URL: https://github.com/Dark-Brain07/GenSecure
+- Deployer Address: 0x8EE4fd47FC30d17f33615FAeF8a69465bfa9B017 (https://explorer-studio.genlayer.com/address/0x8EE4fd47FC30d17f33615FAeF8a69465bfa9B017)
+- Verified Finalized Transactions:
+  * GenSecureRegistry: 0xb341832115d3b21b838e86377fecd59362f220e69709a7cf3d3d5ac7a418e1b4
+  * GenSecureInspector: 0xa1ec50c7dbb2cc5d3437c48897e6c9f170a745098ab45538989397eaa848f6af
+  * GenSecureJudge: 0x18919e14c71b7a106f7b90658325a07c53ad25d866c1a6fc53bdb838af3cc524
+  * Inter-Contract Component Binding: 0xdbcc00872dc2a9b3b528ab22f9e404cd34f4a1d11f518d95a2d51d32a808c5d4
+  * Live Covenant Staking: 0xc3fa9a585b64f45b21a8e160016472ec5152229ff4b475aab40c4493d1086dfc
+- Steward Review Fixes: Complete point-by-point remediation documented in STEWARD_REVIEW_RESPONSE.md
+- Comprehensive Direct Mode Test Suite: 20/20 tests passing (pytest tests/ -v)
+- GenLayer 6-Point Audit: All checks PASSED (Storage Pre-Extraction, Pinned Runner Hash, Fallback URL, Comparative Equivalence, SDK Lint, Live StudioNet Finality).

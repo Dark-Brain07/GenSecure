@@ -7,6 +7,11 @@ export type BaselineReview = {
   time_scope_valid?: boolean;
   baseline_compliant?: boolean;
   breach_condition_present?: boolean;
+  source_fingerprint?: string;
+  retrieval_timestamp?: string;
+  content_length?: number;
+  inspection_coverage?: string;
+  supporting_passages?: string[];
   basis?: string;
   recorded_at?: string;
   provenance?: string;
@@ -21,6 +26,10 @@ export type InspectionReview = {
   current_compliant?: boolean;
   breach_condition_now_supported?: boolean;
   effective_now?: boolean;
+  source_fingerprint?: string;
+  retrieval_timestamp?: string;
+  content_length?: number;
+  inspection_coverage?: string;
   basis?: string;
   recorded_at?: string;
   provenance?: string;
@@ -34,6 +43,10 @@ export type JudgmentReview = {
   permitted_by_rule?: boolean;
   same_subject?: boolean;
   effective_now?: boolean;
+  source_fingerprint?: string;
+  retrieval_timestamp?: string;
+  content_length?: number;
+  inspection_coverage?: string;
   basis?: string;
   recorded_at?: string;
   provenance?: string;
@@ -54,6 +67,14 @@ export type Covenant = {
   stake_atto: string;
   remaining_stake_atto: string;
   challenge_bond_atto: string;
+  covenant_type?: "ORGANIZATION_AUTHENTICATED" | "THIRD_PARTY_ASSURANCE" | string;
+  verification_proof?: string;
+  source_status?: "HEALTHY" | "DEGRADED" | "WITHDRAWN" | string;
+  consecutive_source_failures?: number;
+  first_source_failure_at?: string;
+  baseline_fingerprint?: string;
+  baseline_timestamp?: string;
+  baseline_passages?: string[];
   status: "BASELINE_PENDING" | "BASELINE_RETRYABLE" | "BASELINE_REJECTED" | "ACTIVE" | "BREACHED" | "EXPIRED_UNBREACHED" | "EXPIRED_UNVERIFIED" | string;
   created_at: string;
   activated_at: string;
@@ -77,7 +98,7 @@ export type Challenge = {
   id: string;
   covenant_id: string;
   challenger: string;
-  status: "INSPECTION_PENDING" | "JUDGMENT_PENDING" | "NO_RELEVANT_CHANGE" | "MATERIAL_CHANGE" | "SOURCE_UNAVAILABLE" | "AMBIGUOUS" | "PERMITTED_CHANGE" | "INCONCLUSIVE" | "BREACH" | "TIMED_OUT" | "STALE" | "PROTOCOL_BLOCKED" | string;
+  status: "INSPECTION_PENDING" | "JUDGMENT_PENDING" | "NO_RELEVANT_CHANGE" | "MATERIAL_CHANGE" | "SOURCE_UNAVAILABLE" | "SOURCE_UNAVAILABLE_TEMPORARY" | "PERSISTENT_WITHDRAWAL" | "AMBIGUOUS" | "PERMITTED_CHANGE" | "INCONCLUSIVE" | "BREACH" | "TIMED_OUT" | "STALE" | "PROTOCOL_BLOCKED" | string;
   bond_atto: string;
   bond_released?: boolean;
   bond_recipient?: string;

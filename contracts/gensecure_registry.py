@@ -5,7 +5,7 @@ import json
 import re
 from datetime import datetime, timezone
 
-VERSION = "1.0.0-studionet"
+VERSION = "1.1.0-studionet"
 NETWORK_ID = "61999"
 MIN_STAKE = 10 ** 15
 MAX_STAKE = 10 * 10 ** 18
@@ -27,12 +27,16 @@ CHALLENGE_COOLDOWN = 900
 MIN_LIFETIME = 7200
 MAX_LIFETIME = 30 * 86400
 
+MAX_CONSECUTIVE_SOURCE_FAILURES = 3
+SOURCE_RECOVERY_WINDOW = 86400
+
 BASELINE_STATUSES = ("BASELINE_VERIFIED", "PROMISE_NOT_SUPPORTED", "SOURCE_UNAVAILABLE", "AMBIGUOUS")
 INSPECTION_STATUSES = ("NO_RELEVANT_CHANGE", "MATERIAL_CHANGE", "SOURCE_UNAVAILABLE", "AMBIGUOUS")
 JUDGMENT_OUTCOMES = ("BREACH", "PERMITTED_CHANGE", "INCONCLUSIVE")
 TERMINAL_COVENANT = ("BREACHED", "EXPIRED_UNBREACHED", "BASELINE_REJECTED", "EXPIRED_UNVERIFIED")
 TERMINAL_CHALLENGE = (
-    "NO_RELEVANT_CHANGE", "SOURCE_UNAVAILABLE", "AMBIGUOUS", "PERMITTED_CHANGE",
+    "NO_RELEVANT_CHANGE", "SOURCE_UNAVAILABLE", "SOURCE_UNAVAILABLE_TEMPORARY",
+    "PERSISTENT_WITHDRAWAL", "AMBIGUOUS", "PERMITTED_CHANGE",
     "INCONCLUSIVE", "BREACH", "TIMED_OUT", "STALE", "PROTOCOL_BLOCKED",
 )
 
@@ -57,7 +61,7 @@ def _text(value: str, name: str, limit: int, minimum: int = 1) -> str:
     return value.strip()
 
 
-def _address(value: str, name: str) -> str:
+def _address(value: str, name: str = "address") -> str:
     value = str(value)
     if value.startswith("addr#"):
         value = "0x" + value[5:]
@@ -65,7 +69,7 @@ def _address(value: str, name: str) -> str:
         value = "0x" + value[8:]
     if re.fullmatch(r"0x[0-9a-fA-F]{40}", value) is None or int(value[2:], 16) == 0:
         raise gl.vm.UserError(f"[EXPECTED] invalid {name} address")
-    return value
+    return value.lower()
 
 
 @gl.evm.contract_interface
@@ -266,7 +270,9 @@ class GenSecureRegistry(gl.Contract):
     @gl.public.write.payable
     def create_covenant(self, title: str, subject: str, canonical_url: str, protected_promise: str,
                         breach_rule: str, permitted_changes: str, beneficiary: str,
-                        finder_reward_bps: u256, expires_at: u256) -> str:
+                        finder_reward_bps: u256, expires_at: u256,
+                        covenant_type: str = "THIRD_PARTY_ASSURANCE",
+                        verification_proof: str = "") -> str:
         self._components_only()
         title = _text(title, "title", MAX_TITLE, 4)
         subject = _text(subject, "subject", MAX_SUBJECT, 12)
@@ -288,6 +294,9 @@ class GenSecureRegistry(gl.Contract):
         if not now + MIN_LIFETIME <= expiry <= now + MAX_LIFETIME:
             raise gl.vm.UserError("[EXPECTED] expiry must be 2 hours..30 days ahead")
 
+        covenant_type = "ORGANIZATION_AUTHENTICATED" if covenant_type == "ORGANIZATION_AUTHENTICATED" else "THIRD_PARTY_ASSURANCE"
+        verification_proof = str(verification_proof)[:500] if verification_proof else ""
+
         covenant_id = "gsc-" + str(int(self.next_covenant))
         self.next_covenant = u256(int(self.next_covenant) + 1)
         bond = max(MIN_BOND, stake // 100)
@@ -297,8 +306,12 @@ class GenSecureRegistry(gl.Contract):
             "permitted_changes": permitted_changes, "owner": str(gl.message.sender_address),
             "beneficiary": beneficiary, "finder_reward_bps": str(reward_bps),
             "stake_atto": str(stake), "remaining_stake_atto": str(stake), "challenge_bond_atto": str(bond),
-            "status": "BASELINE_PENDING", "created_at": _iso(), "activated_at": "", "expires_at": str(expiry),
+            "covenant_type": covenant_type, "verification_proof": verification_proof,
+            "status": "BASELINE_PENDING", "source_status": "HEALTHY", "created_at": _iso(),
+            "activated_at": "", "expires_at": str(expiry),
             "baseline_deadline": str(now + BASELINE_TIMEOUT), "baseline_attempt": 1, "baseline_review": None,
+            "baseline_fingerprint": "", "baseline_timestamp": "", "baseline_passages": [],
+            "consecutive_source_failures": 0, "first_source_failure_at": "0",
             "pending_challenge": "", "challenge_count": 0, "last_challenge_at": "0",
             "last_inspection": None, "breach_challenge": "", "breached_at": "", "closed_at": "",
         }
@@ -365,6 +378,10 @@ class GenSecureRegistry(gl.Contract):
         self._validate_baseline_packet(result)
         status = result.get("status")
         covenant["baseline_review"] = result
+        covenant["baseline_fingerprint"] = str(result.get("source_fingerprint", ""))
+        covenant["baseline_timestamp"] = str(result.get("retrieval_timestamp", ""))
+        covenant["baseline_passages"] = result.get("supporting_passages", [])
+
         if _now() >= int(covenant["expires_at"]):
             self._release_stake(covenant, covenant["owner"])
             covenant.update({"status": "EXPIRED_UNVERIFIED", "closed_at": _iso()})
@@ -384,7 +401,7 @@ class GenSecureRegistry(gl.Contract):
     def challenge_covenant(self, covenant_id: str) -> str:
         covenant = self._covenant(covenant_id)
         now = _now()
-        if covenant["status"] != "ACTIVE" or now >= int(covenant["expires_at"]):
+        if covenant["status"] != "ACTIVE" or now > int(covenant["expires_at"]):
             raise gl.vm.UserError("[EXPECTED] covenant is not challengeable")
         if covenant.get("pending_challenge"):
             raise gl.vm.UserError("[EXPECTED] covenant already has a pending challenge")
@@ -393,8 +410,7 @@ class GenSecureRegistry(gl.Contract):
             raise gl.vm.UserError("[EXPECTED] covenant owner cannot challenge their own covenant")
         if now < int(covenant.get("last_challenge_at", "0")) + CHALLENGE_COOLDOWN:
             raise gl.vm.UserError("[EXPECTED] covenant challenge cooldown is active")
-        if now + INSPECTION_TIMEOUT + JUDGE_TIMEOUT + 300 >= int(covenant["expires_at"]):
-            raise gl.vm.UserError("[EXPECTED] insufficient time remains for challenge adjudication")
+
         bond = int(gl.message.value)
         if bond != int(covenant["challenge_bond_atto"]):
             raise gl.vm.UserError("[EXPECTED] send the exact challenge bond")
@@ -455,27 +471,65 @@ class GenSecureRegistry(gl.Contract):
         challenge["inspection"] = result
         covenant["last_inspection"] = result
 
-        if covenant["status"] != "ACTIVE" or _now() >= int(covenant["expires_at"]) or _now() >= int(challenge["stage_deadline"]):
+        now = _now()
+        if covenant["status"] != "ACTIVE" or now >= int(challenge["stage_deadline"]):
             challenge["status"] = "STALE"
             challenge["settled_at"] = _iso()
             self._release_bond(challenge, challenge["challenger"])
             self._clear_pending(covenant, challenge_id)
-            covenant["last_challenge_at"] = str(_now())
+            covenant["last_challenge_at"] = str(now)
         elif status == "NO_RELEVANT_CHANGE":
+            covenant["consecutive_source_failures"] = 0
+            covenant["first_source_failure_at"] = "0"
+            covenant["source_status"] = "HEALTHY"
             challenge["status"] = "NO_RELEVANT_CHANGE"
             challenge["settled_at"] = _iso()
             self._release_bond(challenge, covenant["owner"])
             self._clear_pending(covenant, challenge_id)
-            covenant["last_challenge_at"] = str(_now())
-        elif status in ("SOURCE_UNAVAILABLE", "AMBIGUOUS"):
-            challenge["status"] = status
+            covenant["last_challenge_at"] = str(now)
+        elif status == "SOURCE_UNAVAILABLE":
+            failures = int(covenant.get("consecutive_source_failures", 0)) + 1
+            covenant["consecutive_source_failures"] = failures
+            first_fail = int(covenant.get("first_source_failure_at", "0"))
+            if first_fail == 0:
+                covenant["first_source_failure_at"] = str(now)
+                first_fail = now
+
+            if failures >= MAX_CONSECUTIVE_SOURCE_FAILURES or now >= first_fail + SOURCE_RECOVERY_WINDOW:
+                stake = int(covenant["remaining_stake_atto"])
+                reward = stake * int(covenant["finder_reward_bps"]) // 10000
+                beneficiary_amount = stake - reward
+                self._release_bond(challenge, challenge["challenger"])
+                self._release_stake(covenant, challenge["challenger"], reward)
+                self._release_stake(covenant, covenant["beneficiary"], beneficiary_amount)
+                challenge["status"] = "PERSISTENT_WITHDRAWAL"
+                challenge["finder_reward_atto"] = str(reward)
+                challenge["settled_at"] = _iso()
+                covenant.update({
+                    "status": "BREACHED", "source_status": "WITHDRAWN",
+                    "breach_challenge": challenge_id, "breached_at": _iso(),
+                    "closed_at": _iso(), "pending_challenge": "",
+                })
+                self.covenants_breached = u256(int(self.covenants_breached) + 1)
+            else:
+                challenge["status"] = "SOURCE_UNAVAILABLE_TEMPORARY"
+                challenge["settled_at"] = _iso()
+                covenant["source_status"] = "DEGRADED"
+                self._release_bond(challenge, challenge["challenger"])
+                self._clear_pending(covenant, challenge_id)
+                covenant["last_challenge_at"] = str(now)
+        elif status == "AMBIGUOUS":
+            challenge["status"] = "AMBIGUOUS"
             challenge["settled_at"] = _iso()
             self._release_bond(challenge, challenge["challenger"])
             self._clear_pending(covenant, challenge_id)
-            covenant["last_challenge_at"] = str(_now())
+            covenant["last_challenge_at"] = str(now)
         else:
+            covenant["consecutive_source_failures"] = 0
+            covenant["first_source_failure_at"] = "0"
+            covenant["source_status"] = "HEALTHY"
             challenge["status"] = "JUDGMENT_PENDING"
-            challenge["stage_deadline"] = str(_now() + JUDGE_TIMEOUT)
+            challenge["stage_deadline"] = str(now + JUDGE_TIMEOUT)
             self._save_challenge(challenge)
             self._save_covenant(covenant)
             gl.get_contract_at(Address(self.judge_address)).emit(on="finalized").judge_breach(
@@ -518,24 +572,25 @@ class GenSecureRegistry(gl.Contract):
             raise gl.vm.UserError("[EXPECTED] inconclusive judgment asserts contradictory findings")
         challenge["judgment"] = result
 
-        if covenant["status"] != "ACTIVE" or _now() >= int(covenant["expires_at"]) or _now() >= int(challenge["stage_deadline"]):
+        now = _now()
+        if covenant["status"] != "ACTIVE" or now >= int(challenge["stage_deadline"]):
             challenge["status"] = "STALE"
             challenge["settled_at"] = _iso()
             self._release_bond(challenge, challenge["challenger"])
             self._clear_pending(covenant, challenge_id)
-            covenant["last_challenge_at"] = str(_now())
+            covenant["last_challenge_at"] = str(now)
         elif outcome == "PERMITTED_CHANGE":
             challenge["status"] = "PERMITTED_CHANGE"
             challenge["settled_at"] = _iso()
             self._release_bond(challenge, covenant["owner"])
             self._clear_pending(covenant, challenge_id)
-            covenant["last_challenge_at"] = str(_now())
+            covenant["last_challenge_at"] = str(now)
         elif outcome == "INCONCLUSIVE":
             challenge["status"] = "INCONCLUSIVE"
             challenge["settled_at"] = _iso()
             self._release_bond(challenge, challenge["challenger"])
             self._clear_pending(covenant, challenge_id)
-            covenant["last_challenge_at"] = str(_now())
+            covenant["last_challenge_at"] = str(now)
         else:
             stake = int(covenant["remaining_stake_atto"])
             if stake <= 0:
@@ -576,17 +631,10 @@ class GenSecureRegistry(gl.Contract):
         covenant = self._covenant(covenant_id)
         if covenant["status"] in TERMINAL_COVENANT:
             raise gl.vm.UserError("[EXPECTED] covenant is already closed")
+        if covenant.get("pending_challenge"):
+            raise gl.vm.UserError("[EXPECTED] covenant has an active pending challenge under adjudication")
         if _now() < int(covenant["expires_at"]):
             raise gl.vm.UserError("[EXPECTED] covenant expiry has not passed")
-        pending = covenant.get("pending_challenge", "")
-        if pending:
-            challenge = self._challenge(pending)
-            if challenge["status"] in ("INSPECTION_PENDING", "JUDGMENT_PENDING"):
-                challenge["status"] = "PROTOCOL_BLOCKED"
-                challenge["settled_at"] = _iso()
-                self._release_bond(challenge, challenge["challenger"])
-                self._save_challenge(challenge)
-            covenant["pending_challenge"] = ""
         if int(covenant["remaining_stake_atto"]) > 0:
             self._release_stake(covenant, covenant["owner"])
         if covenant["status"] in ("BASELINE_PENDING", "BASELINE_RETRYABLE"):
@@ -616,9 +664,13 @@ class GenSecureRegistry(gl.Contract):
         covenant["can_challenge"] = (
             covenant["status"] == "ACTIVE" and not covenant.get("pending_challenge")
             and now >= int(covenant.get("last_challenge_at", "0")) + CHALLENGE_COOLDOWN
-            and now + INSPECTION_TIMEOUT + JUDGE_TIMEOUT + 300 < int(covenant["expires_at"])
+            and now <= int(covenant["expires_at"])
         )
-        covenant["can_expire"] = now >= int(covenant["expires_at"]) and covenant["status"] not in TERMINAL_COVENANT
+        covenant["can_expire"] = (
+            now >= int(covenant["expires_at"])
+            and covenant["status"] not in TERMINAL_COVENANT
+            and not covenant.get("pending_challenge")
+        )
         covenant["can_expire_baseline"] = (
             covenant["status"] == "BASELINE_PENDING"
             and now >= int(covenant["baseline_deadline"])
@@ -644,12 +696,13 @@ class GenSecureRegistry(gl.Contract):
         fields = (
             "id", "title", "subject", "canonical_url", "protected_promise", "owner", "beneficiary",
             "stake_atto", "remaining_stake_atto", "challenge_bond_atto", "finder_reward_bps", "status",
+            "covenant_type", "source_status", "consecutive_source_failures",
             "created_at", "activated_at", "expires_at", "pending_challenge", "challenge_count",
         )
         items = []
         for index in range(start, stop):
             covenant = self._covenant(self.covenant_ids[index])
-            items.append({key: covenant[key] for key in fields})
+            items.append({key: covenant.get(key, "") for key in fields})
         return {"items": items, "total": str(len(self.covenant_ids))}
 
     @gl.public.view
@@ -688,6 +741,7 @@ class GenSecureRegistry(gl.Contract):
 
     @gl.public.view
     def get_credit(self, recipient: str) -> str:
+        recipient = _address(recipient, "credit recipient")
         account = Address(recipient)
         return str(int(self.credits[account])) if account in self.credits else "0"
 

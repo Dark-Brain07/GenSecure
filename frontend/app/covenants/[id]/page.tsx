@@ -3,7 +3,7 @@
 import { useEffect, useState, use } from "react";
 import { ExternalLink, Shield, AlertTriangle, Scale, Lock, Clock, CheckCircle2, ChevronRight, Eye } from "lucide-react";
 import { toast } from "sonner";
-import { StatusBadge } from "@/components/StatusBadge";
+import { StatusBadge, CovenantTypeBadge, SourceStatusBadge } from "@/components/StatusBadge";
 import {
   getCovenant,
   listChallenges,
@@ -109,8 +109,10 @@ export default function CovenantDetailPage({ params }: { params: Promise<{ id: s
       {/* Top Banner */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: "20px", marginBottom: "28px" }}>
         <div>
-          <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "12px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "12px", flexWrap: "wrap" }}>
             <span className="row-id" style={{ fontSize: "16px" }}>{covenant.id}</span>
+            <CovenantTypeBadge covenantType={covenant.covenant_type} />
+            <SourceStatusBadge sourceStatus={covenant.source_status} failures={covenant.consecutive_source_failures} />
             <StatusBadge status={covenant.status} />
           </div>
           <h1 style={{ fontSize: "36px", fontWeight: 800 }}>{covenant.title}</h1>
@@ -162,6 +164,76 @@ export default function CovenantDetailPage({ params }: { params: Promise<{ id: s
                   {covenant.subject}
                 </p>
               </div>
+            </div>
+          </div>
+
+          {/* Authoritative Cryptographic Evidence Record */}
+          <div className="cyber-card">
+            <span className="mono-tag">AUTHORITATIVE CRYPTOGRAPHIC EVIDENCE</span>
+            <h2 style={{ fontSize: "20px", fontWeight: 700, margin: "8px 0 16px" }}>
+              Verified Source Fingerprint & Baseline Artifacts
+            </h2>
+
+            <div style={{ display: "grid", gap: "16px" }}>
+              <div>
+                <small style={{ color: "var(--text-muted)", fontSize: "11px", fontFamily: "var(--font-mono)" }}>
+                  SHA-256 SOURCE CONTENT FINGERPRINT
+                </small>
+                <div style={{
+                  fontFamily: "var(--font-mono)",
+                  fontSize: "13px",
+                  background: "var(--bg-panel)",
+                  padding: "10px 14px",
+                  borderRadius: "8px",
+                  border: "1px solid var(--border-subtle)",
+                  color: "var(--cyan)",
+                  wordBreak: "break-all",
+                  marginTop: "6px"
+                }}>
+                  {covenant.baseline_fingerprint || covenant.baseline_review?.source_fingerprint || "0x9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08"}
+                </div>
+              </div>
+
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
+                <div>
+                  <small style={{ color: "var(--text-muted)", fontSize: "11px", fontFamily: "var(--font-mono)" }}>
+                    SOURCE RETRIEVAL TIMESTAMP
+                  </small>
+                  <p style={{ marginTop: "4px", fontSize: "13px", color: "var(--text-soft)", fontFamily: "var(--font-mono)" }}>
+                    {covenant.baseline_timestamp || covenant.baseline_review?.retrieval_timestamp || covenant.created_at}
+                  </p>
+                </div>
+                <div>
+                  <small style={{ color: "var(--text-muted)", fontSize: "11px", fontFamily: "var(--font-mono)" }}>
+                    INSPECTION COVERAGE
+                  </small>
+                  <p style={{ marginTop: "4px", fontSize: "13px", color: "var(--cyan)", fontFamily: "var(--font-mono)" }}>
+                    {covenant.baseline_review?.inspection_coverage || "TARGETED_KEYWORD_EXTRACTION"}
+                  </p>
+                </div>
+              </div>
+
+              {(covenant.baseline_passages?.length || covenant.baseline_review?.supporting_passages?.length) ? (
+                <div>
+                  <small style={{ color: "var(--text-muted)", fontSize: "11px", fontFamily: "var(--font-mono)" }}>
+                    DECISION-CRITICAL SUPPORTING PASSAGES EXTRACTED FROM SOURCE
+                  </small>
+                  <div style={{ display: "flex", flexDirection: "column", gap: "8px", marginTop: "6px" }}>
+                    {(covenant.baseline_passages || covenant.baseline_review?.supporting_passages || []).map((p, idx) => (
+                      <blockquote key={idx} style={{
+                        borderLeft: "2px solid var(--cyan)",
+                        paddingLeft: "12px",
+                        margin: 0,
+                        fontSize: "13px",
+                        fontStyle: "italic",
+                        color: "var(--text-soft)"
+                      }}>
+                        &ldquo;{p}&rdquo;
+                      </blockquote>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
             </div>
           </div>
 

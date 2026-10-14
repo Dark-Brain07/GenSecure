@@ -39,6 +39,8 @@ export default function CreateCovenantPage() {
     stake: "0.1",
     bountyPercent: "10",
     expiryHours: "168", // 7 days
+    covenantType: "THIRD_PARTY_ASSURANCE",
+    verificationProof: "",
   });
 
   const updateField = (field: string, val: string) => {
@@ -113,6 +115,8 @@ export default function CreateCovenantPage() {
           formData.beneficiary.trim(),
           rewardBps,
           BigInt(expiryTimestamp),
+          formData.covenantType,
+          formData.verificationProof.trim(),
         ],
         stakeAtto
       );
@@ -200,6 +204,68 @@ export default function CreateCovenantPage() {
             <p style={{ color: "var(--text-muted)", fontSize: "14px", marginBottom: "24px" }}>
               The canonical URL will be frozen permanently. Challengers cannot substitute an alternative source.
             </p>
+
+            <div className="form-group">
+              <label>Covenant Classification</label>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px", marginTop: "6px" }}>
+                <button
+                  type="button"
+                  onClick={() => updateField("covenantType", "THIRD_PARTY_ASSURANCE")}
+                  style={{
+                    padding: "12px",
+                    borderRadius: "8px",
+                    textAlign: "left",
+                    border: `1px solid ${formData.covenantType === "THIRD_PARTY_ASSURANCE" ? "var(--cyan)" : "var(--border-subtle)"}`,
+                    background: formData.covenantType === "THIRD_PARTY_ASSURANCE" ? "rgba(6, 182, 212, 0.1)" : "rgba(255,255,255,0.02)",
+                    cursor: "pointer",
+                    color: "inherit",
+                  }}
+                >
+                  <div style={{ fontWeight: 600, fontSize: "14px", color: formData.covenantType === "THIRD_PARTY_ASSURANCE" ? "var(--cyan)" : "var(--text-bright)" }}>
+                    🛡️ Third-Party / Community
+                  </div>
+                  <div style={{ fontSize: "12px", color: "var(--text-muted)", marginTop: "4px" }}>
+                    Watchdog, consumer, or community staked policy guarantee
+                  </div>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => updateField("covenantType", "ORGANIZATION_AUTHENTICATED")}
+                  style={{
+                    padding: "12px",
+                    borderRadius: "8px",
+                    textAlign: "left",
+                    border: `1px solid ${formData.covenantType === "ORGANIZATION_AUTHENTICATED" ? "var(--emerald)" : "var(--border-subtle)"}`,
+                    background: formData.covenantType === "ORGANIZATION_AUTHENTICATED" ? "rgba(16, 185, 129, 0.1)" : "rgba(255,255,255,0.02)",
+                    cursor: "pointer",
+                    color: "inherit",
+                  }}
+                >
+                  <div style={{ fontWeight: 600, fontSize: "14px", color: formData.covenantType === "ORGANIZATION_AUTHENTICATED" ? "var(--emerald)" : "var(--text-bright)" }}>
+                    🏢 Organization Authenticated
+                  </div>
+                  <div style={{ fontSize: "12px", color: "var(--text-muted)", marginTop: "4px" }}>
+                    Official pledge staked by the verified domain/organization owner
+                  </div>
+                </button>
+              </div>
+            </div>
+
+            {formData.covenantType === "ORGANIZATION_AUTHENTICATED" && (
+              <div className="form-group" style={{ borderLeft: "3px solid var(--emerald)", paddingLeft: "14px" }}>
+                <label>Organization Verification Proof (URL or .well-known reference)</label>
+                <input
+                  type="url"
+                  className="form-control"
+                  placeholder="e.g. https://example.com/.well-known/gensecure-verification.json"
+                  value={formData.verificationProof}
+                  onChange={(e) => updateField("verificationProof", e.target.value)}
+                />
+                <span style={{ fontSize: "12px", color: "var(--text-muted)", marginTop: "4px", display: "block" }}>
+                  Provide an authoritative link to the organization's published verification payload or security disclosure.
+                </span>
+              </div>
+            )}
 
             <div className="form-group">
               <label>Covenant Title</label>
@@ -402,6 +468,18 @@ export default function CreateCovenantPage() {
                 <span>Covenant Title</span>
                 <strong>{formData.title}</strong>
               </div>
+              <div className="meta-key-value">
+                <span>Classification</span>
+                <strong style={{ color: formData.covenantType === "ORGANIZATION_AUTHENTICATED" ? "var(--emerald)" : "var(--cyan)" }}>
+                  {formData.covenantType === "ORGANIZATION_AUTHENTICATED" ? "🏢 Organization Authenticated" : "🛡️ Third-Party Assurance"}
+                </strong>
+              </div>
+              {formData.verificationProof && (
+                <div className="meta-key-value">
+                  <span>Verification Proof</span>
+                  <span style={{ fontSize: "12px", fontFamily: "var(--font-mono)", wordBreak: "break-all" }}>{formData.verificationProof}</span>
+                </div>
+              )}
               <div className="meta-key-value">
                 <span>Canonical URL</span>
                 <strong style={{ color: "var(--cyan)" }}>{formData.canonicalUrl}</strong>
